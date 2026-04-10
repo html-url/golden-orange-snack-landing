@@ -75,7 +75,7 @@ const MENU_ITEMS: MenuItem[] = [
     name: "Clay Pot Rice with Roasted Duck",
     price: "£8.90",
     description: "Tender roasted duck with vegetables in traditional clay pot",
-    image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663533711603/GyUp4qbcEY44iMFXrWBGm3/menu-clay-pot-2khksnfWkfQBR2oQDefk.webp",
+    image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663533711603/GyUp4qbcEY44iMFXrWBGm3/clay-pot-rice-Z9FiH9KgQnkXZNEfCUpCuD.webp",
     categories: [],
   },
 ];
@@ -411,16 +411,7 @@ export default function Home() {
             )}
           </div>
 
-          {/* CTA */}
-          <div className="text-center">
-            <Button
-              onClick={() => scrollToSection("offer")}
-              className="bg-[#FF7A00] hover:bg-[#E66A00] text-white font-bold text-lg px-8 py-6 rounded-lg shadow-lg"
-              aria-label="Get 10% off your first order"
-            >
-              👉 Get 10% OFF Your First Order
-            </Button>
-          </div>
+
         </div>
       </section>
 

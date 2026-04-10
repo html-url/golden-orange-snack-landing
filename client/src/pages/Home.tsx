@@ -247,8 +247,10 @@ export default function Home() {
 
           {/* Hero content */}
         <div className="relative z-20 text-center max-w-3xl mx-auto px-4 mb-20">
-          <h1 className="text-5xl md:text-6xl font-black text-white mb-6 leading-tight" style={{ fontFamily: 'Poppins, sans-serif', letterSpacing: '-0.03em' }}>
-            Authentic Chinese Street Food
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-6 leading-tight" style={{ fontFamily: 'Poppins, sans-serif', letterSpacing: '-0.03em' }}>
+            <span className="block">Authentic</span>
+            <span className="block">Chinese Street</span>
+            <span className="block">Food</span>
           </h1>
           <p className="text-xl md:text-2xl text-white/90 mb-8 font-light">
             Fresh, Fast, and Affordable — Hand-pulled noodles, sizzling street snacks, and bold flavours at unbeatable prices in Leicester.

@@ -87,16 +87,16 @@ const FILTER_CATEGORIES: FilterCategory[] = [
 
 const TESTIMONIALS: Testimonial[] = [
   {
-    text: "Amazing food for such an incredibly cheap price",
-    author: "Local Customer",
+    text: "Absolutely brilliant! The hand-pulled noodles are the best I've had outside of China. Staff are so friendly and the prices are unbeatable.",
+    author: "Sarah M., Leicester",
   },
   {
-    text: "Authentic dishes you won't find elsewhere",
-    author: "Food Enthusiast",
+    text: "Been coming here for 2 years. Never disappointed. The lamb skewers are incredible and the portions are generous. Highly recommend!",
+    author: "Ahmed K., Local Regular",
   },
   {
-    text: "Always delicious and underrated gem",
-    author: "Regular Customer",
+    text: "Finally found authentic Chinese street food in Leicester! The clay pot rice is perfection. Worth every penny. 5 stars!",
+    author: "Emma T., Food Blogger",
   },
 ];
 
@@ -245,9 +245,9 @@ export default function Home() {
         {/* Dark overlay */}
         <div className="absolute inset-0 bg-black/40 z-10" aria-hidden="true"></div>
 
-        {/* Hero content */}
+          {/* Hero content */}
         <div className="relative z-20 text-center max-w-3xl mx-auto px-4 mb-20">
-          <h1 className="headline-display text-white mb-6">
+          <h1 className="text-5xl md:text-6xl font-black text-white mb-6 leading-tight" style={{ fontFamily: 'Poppins, sans-serif', letterSpacing: '-0.03em' }}>
             Authentic Chinese Street Food
           </h1>
           <p className="text-xl md:text-2xl text-white/90 mb-8 font-light">
@@ -532,6 +532,68 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ===== Featured Dishes Section ===== */}
+      <section className="py-16 md:py-24 bg-white">
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className="headline-lg text-center mb-12">Discover Our Authentic Flavours</h2>
+          
+          <div className="grid md:grid-cols-2 gap-8 items-center mb-12">
+            <div>
+              <img
+                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663533711603/GyUp4qbcEY44iMFXrWBGm3/menu-noodles-bowl-9EGd9s3tMdh9dGcHoeRE62.webp"
+                alt="Steaming bowl of hand-pulled noodles in rich beef broth"
+                className="rounded-lg shadow-lg w-full h-auto"
+                loading="lazy"
+              />
+            </div>
+            <div>
+              <h3 className="text-3xl font-bold mb-4 text-[#0A0A0A]">Hand-Pulled Noodles</h3>
+              <p className="text-lg text-gray-600 mb-6">Our signature Lanzhou beef noodles are made fresh daily with premium ingredients. The hand-pulled noodles are tender and perfectly chewy, swimming in a rich, aromatic broth that's been simmered for hours.</p>
+              <ul className="space-y-2 text-gray-600 mb-6">
+                <li>✓ Made fresh to order</li>
+                <li>✓ Traditional Northern Chinese recipe</li>
+                <li>✓ Only £8.90</li>
+              </ul>
+              <Button
+                onClick={() => scrollToSection("offer")}
+                className="bg-[#FF7A00] hover:bg-[#E66A00] text-white font-bold px-6 py-3 rounded-lg"
+                aria-label="Get discount and order now"
+              >
+                Order Now
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div className="order-2 md:order-1">
+              <h3 className="text-3xl font-bold mb-4 text-[#0A0A0A]">Street Food Collection</h3>
+              <p className="text-lg text-gray-600 mb-6">From sizzling lamb skewers to crispy jianbing crepes and tender roasted duck in clay pots — our full menu showcases the best of authentic Chinese street food culture.</p>
+              <ul className="space-y-2 text-gray-600 mb-6">
+                <li>✓ Lamb skewers with cumin spice</li>
+                <li>✓ Crispy jianbing crepes</li>
+                <li>✓ Clay pot rice with roasted duck</li>
+                <li>✓ All under £9</li>
+              </ul>
+              <Button
+                onClick={() => scrollToSection("menu")}
+                className="bg-[#FF7A00] hover:bg-[#E66A00] text-white font-bold px-6 py-3 rounded-lg"
+                aria-label="View full menu"
+              >
+                View Full Menu
+              </Button>
+            </div>
+            <div className="order-1 md:order-2">
+              <img
+                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663533711603/GyUp4qbcEY44iMFXrWBGm3/street-food-collage-BvTucjoyhw2wHfYkBW3jRo.webp"
+                alt="Authentic Chinese street food collection: lamb skewers, jianbing, and clay pot rice"
+                className="rounded-lg shadow-lg w-full h-auto"
+                loading="lazy"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ===== Why Choose Us Section ===== */}
       <section className="py-16 md:py-24 bg-[#FFFAF0]">
         <div className="max-w-6xl mx-auto px-4">
@@ -570,23 +632,6 @@ export default function Home() {
               👉 Claim Your 10% Discount Now
             </Button>
           </div>
-        </div>
-      </section>
-
-      {/* ===== Urgency Section ===== */}
-      <section className="py-16 md:py-24 bg-[#FF7A00] text-white">
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="headline-lg text-white mb-6">Limited-Time Offer</h2>
-          <p className="text-xl mb-8 font-light">
-            Get 10% OFF your first order — available this week only.
-          </p>
-          <Button
-            onClick={() => scrollToSection("offer")}
-            className="bg-white hover:bg-gray-100 text-[#FF7A00] font-bold text-lg px-8 py-6 rounded-lg shadow-lg"
-            aria-label="Claim 10% off"
-          >
-            👉 Claim 10% Off
-          </Button>
         </div>
       </section>
 

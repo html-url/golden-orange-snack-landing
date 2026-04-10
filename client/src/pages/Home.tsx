@@ -1,131 +1,230 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState, useEffect } from "react";
-import { ChevronDown, MapPin, Phone, Star, Zap, Award, Heart } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { ChevronDown, MapPin, Phone, Star, Zap, Award, Heart, X } from "lucide-react";
 
 /**
  * Golden Orange Snack Landing Page
  * Design: Bold Street Food Energy
  * Color Scheme: Burnt Orange (#FF7A00), Jet Black (#0A0A0A), Cream White (#FFFAF0)
  * Typography: Poppins Bold (headlines), Inter Regular (body), Playfair Display Bold (section headers)
+ * 
+ * Features:
+ * - Responsive design (mobile-first)
+ * - Menu filtering by category (Vegetarian, Spicy)
+ * - Exit-intent popup for lead capture
+ * - Smooth scroll navigation
+ * - Form validation and submission handling
  */
 
-export default function Home() {
-  const [showExitPopup, setShowExitPopup] = useState(false);
-  const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
-  const [submitted, setSubmitted] = useState(false);
-  const [stickyVisible, setStickyVisible] = useState(true);
+// Type definitions
+interface MenuItem {
+  id: string;
+  name: string;
+  price: string;
+  description: string;
+  image: string;
+  categories: string[];
+}
 
-  // Exit intent popup
+interface Testimonial {
+  text: string;
+  author: string;
+}
+
+interface FormData {
+  name: string;
+  email: string;
+  phone: string;
+}
+
+interface FilterCategory {
+  id: string;
+  label: string;
+  icon: string;
+}
+
+// Constants
+const MENU_ITEMS: MenuItem[] = [
+  {
+    id: "lanzhou-beef-noodle",
+    name: "Lanzhou Beef Noodle Soup",
+    price: "£8.90",
+    description: "Hand-pulled noodles in rich beef broth with tender meat",
+    image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663533711603/GyUp4qbcEY44iMFXrWBGm3/hero-noodles-breZqbz6ZAVdwXsCT9Xunj.webp",
+    categories: ["spicy"],
+  },
+  {
+    id: "lamb-skewers",
+    name: "Lamb Skewers",
+    price: "£3.80",
+    description: "2 skewers of tender lamb with cumin spice, grilled to perfection",
+    image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663533711603/GyUp4qbcEY44iMFXrWBGm3/menu-skewers-mGgu9uShsWnAxZgYTrn8hT.webp",
+    categories: ["spicy"],
+  },
+  {
+    id: "jianbing",
+    name: "Jianbing (Chinese Crepe)",
+    price: "£4.50",
+    description: "Crispy crepe filled with egg, wonton, and scallions",
+    image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663533711603/GyUp4qbcEY44iMFXrWBGm3/menu-jianbing-hGXmiTpufAugRftpnPmZ9N.webp",
+    categories: ["vegetarian"],
+  },
+  {
+    id: "clay-pot-rice",
+    name: "Clay Pot Rice with Roasted Duck",
+    price: "£8.90",
+    description: "Tender roasted duck with vegetables in traditional clay pot",
+    image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663533711603/GyUp4qbcEY44iMFXrWBGm3/menu-clay-pot-2khksnfWkfQBR2oQDefk.webp",
+    categories: [],
+  },
+];
+
+const FILTER_CATEGORIES: FilterCategory[] = [
+  { id: "vegetarian", label: "🥬 Vegetarian", icon: "🥬" },
+  { id: "spicy", label: "🌶️ Spicy", icon: "🌶️" },
+];
+
+const TESTIMONIALS: Testimonial[] = [
+  {
+    text: "Amazing food for such an incredibly cheap price",
+    author: "Local Customer",
+  },
+  {
+    text: "Authentic dishes you won't find elsewhere",
+    author: "Food Enthusiast",
+  },
+  {
+    text: "Always delicious and underrated gem",
+    author: "Regular Customer",
+  },
+];
+
+const INITIAL_FORM_DATA: FormData = { name: "", email: "", phone: "" };
+const FORM_RESET_DELAY = 3000;
+const SCROLL_THRESHOLD = 300;
+const EXIT_INTENT_Y_THRESHOLD = 0;
+
+// Main component
+export default function Home() {
+  // State management
+  const [showExitPopup, setShowExitPopup] = useState<boolean>(false);
+  const [formData, setFormData] = useState<FormData>(INITIAL_FORM_DATA);
+  const [submitted, setSubmitted] = useState<boolean>(false);
+  const [stickyVisible, setStickyVisible] = useState<boolean>(true);
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
+
+  // Exit intent popup handler
   useEffect(() => {
-    const handleMouseLeave = (e: MouseEvent) => {
-      if (e.clientY <= 0 && !showExitPopup && !submitted) {
+    const handleMouseLeave = (e: MouseEvent): void => {
+      if (e.clientY <= EXIT_INTENT_Y_THRESHOLD && !showExitPopup && !submitted) {
         setShowExitPopup(true);
       }
     };
 
     document.addEventListener("mouseleave", handleMouseLeave);
-    return () => document.removeEventListener("mouseleave", handleMouseLeave);
+    return () => {
+      document.removeEventListener("mouseleave", handleMouseLeave);
+    };
   }, [showExitPopup, submitted]);
 
-  // Handle form submission
-  const handleFormSubmit = (e: React.FormEvent) => {
+  // Form submission handler
+  const handleFormSubmit = useCallback((e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
-    if (formData.email) {
-      setSubmitted(true);
-      setShowExitPopup(false);
-      // Reset form after 3 seconds
-      setTimeout(() => {
-        setFormData({ name: "", email: "", phone: "" });
-        setSubmitted(false);
-      }, 3000);
+    
+    if (!formData.email.trim()) {
+      return;
     }
-  };
 
-  // Smooth scroll to section
-  const scrollToSection = (id: string) => {
+    setSubmitted(true);
+    setShowExitPopup(false);
+
+    setTimeout(() => {
+      setFormData(INITIAL_FORM_DATA);
+      setSubmitted(false);
+    }, FORM_RESET_DELAY);
+  }, [formData.email]);
+
+  // Scroll to section handler
+  const scrollToSection = useCallback((id: string): void => {
     const element = document.getElementById(id);
-    element?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  // Track scroll for sticky button visibility
-  useEffect(() => {
-    const handleScroll = () => {
-      setStickyVisible(window.scrollY < 300);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+    }
   }, []);
 
-  const menuItems = [
-    {
-      name: "Lanzhou Beef Noodle Soup",
-      price: "£8.90",
-      description: "Hand-pulled noodles in rich beef broth with tender meat",
-      image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663533711603/GyUp4qbcEY44iMFXrWBGm3/hero-noodles-breZqbz6ZAVdwXsCT9Xunj.webp",
-    },
-    {
-      name: "Lamb Skewers",
-      price: "£3.80",
-      description: "2 skewers of tender lamb with cumin spice, grilled to perfection",
-      image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663533711603/GyUp4qbcEY44iMFXrWBGm3/menu-skewers-mGgu9uShsWnAxZgYTrn8hT.webp",
-    },
-    {
-      name: "Jianbing (Chinese Crepe)",
-      price: "£4.50",
-      description: "Crispy crepe filled with egg, wonton, and scallions",
-      image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663533711603/GyUp4qbcEY44iMFXrWBGm3/menu-jianbing-hGXmiTpufAugRftpnPmZ9N.webp",
-    },
-    {
-      name: "Clay Pot Rice with Roasted Duck",
-      price: "£8.90",
-      description: "Tender roasted duck with vegetables in traditional clay pot",
-      image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663533711603/GyUp4qbcEY44iMFXrWBGm3/menu-clay-pot-2khksnfWkfQBR2oQDefk.webp",
-    },
-  ];
+  // Scroll visibility handler
+  useEffect(() => {
+    const handleScroll = (): void => {
+      setStickyVisible(window.scrollY < SCROLL_THRESHOLD);
+    };
 
-  const testimonials = [
-    {
-      text: "Amazing food for such an incredibly cheap price",
-      author: "Local Customer",
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  // Filter toggle handler
+  const toggleFilter = useCallback((filter: string): void => {
+    setActiveFilters((prev) =>
+      prev.includes(filter)
+        ? prev.filter((f) => f !== filter)
+        : [...prev, filter]
+    );
+  }, []);
+
+  // Memoized filtered menu items
+  const filteredMenuItems = useMemo<MenuItem[]>(() => {
+    if (activeFilters.length === 0) {
+      return MENU_ITEMS;
+    }
+    return MENU_ITEMS.filter((item) =>
+      activeFilters.every((filter) => item.categories.includes(filter))
+    );
+  }, [activeFilters]);
+
+  // Form input change handler
+  const handleFormChange = useCallback(
+    (field: keyof FormData, value: string): void => {
+      setFormData((prev) => ({ ...prev, [field]: value }));
     },
-    {
-      text: "Authentic dishes you won't find elsewhere",
-      author: "Food Enthusiast",
-    },
-    {
-      text: "Always delicious and underrated gem",
-      author: "Regular Customer",
-    },
-  ];
+    []
+  );
 
   return (
     <div className="min-h-screen bg-[#FFFAF0] text-[#0A0A0A]">
-      {/* Sticky Header with CTA */}
+      {/* ===== Sticky Header ===== */}
       <header className="sticky top-0 z-40 bg-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+          {/* Logo */}
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-[#FF7A00] rounded-full flex items-center justify-center">
+            <div className="w-10 h-10 bg-[#FF7A00] rounded-full flex items-center justify-center flex-shrink-0">
               <span className="text-white font-bold text-lg">G</span>
             </div>
             <h1 className="text-xl font-bold text-[#0A0A0A]">Golden Orange Snack</h1>
           </div>
+
+          {/* Navigation */}
           <nav className="hidden md:flex gap-8 items-center">
             <button
               onClick={() => scrollToSection("menu")}
               className="text-[#0A0A0A] hover:text-[#FF7A00] transition font-medium"
+              aria-label="Navigate to menu section"
             >
               Menu
             </button>
             <button
               onClick={() => scrollToSection("location")}
               className="text-[#0A0A0A] hover:text-[#FF7A00] transition font-medium"
+              aria-label="Navigate to location section"
             >
               Location
             </button>
             <Button
               onClick={() => scrollToSection("offer")}
               className="bg-[#FF7A00] hover:bg-[#E66A00] text-white font-bold"
+              aria-label="Get 10% off discount"
             >
               Get 10% Off
             </Button>
@@ -133,7 +232,7 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero Section with Diagonal Cut */}
+      {/* ===== Hero Section ===== */}
       <section
         className="relative h-screen flex items-center justify-center overflow-hidden"
         style={{
@@ -143,10 +242,10 @@ export default function Home() {
           clipPath: "polygon(0 0, 100% 0, 100% 85%, 0 100%)",
         }}
       >
-        {/* Dark overlay for text readability */}
-        <div className="absolute inset-0 bg-black/40 z-10"></div>
+        {/* Dark overlay */}
+        <div className="absolute inset-0 bg-black/40 z-10" aria-hidden="true"></div>
 
-        {/* Hero Content */}
+        {/* Hero content */}
         <div className="relative z-20 text-center max-w-3xl mx-auto px-4 mb-20">
           <h1 className="headline-display text-white mb-6">
             Authentic Chinese Street Food
@@ -155,14 +254,14 @@ export default function Home() {
             Fresh, Fast, and Affordable — Hand-pulled noodles, sizzling street snacks, and bold flavours at unbeatable prices in Leicester.
           </p>
 
-          {/* Trust Signals */}
+          {/* Trust signals */}
           <div className="flex flex-col md:flex-row justify-center gap-6 mb-8 text-white">
             <div className="flex items-center gap-2">
-              <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+              <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" aria-hidden="true" />
               <span className="font-semibold">Rated 4.7/5 across platforms</span>
             </div>
             <div className="flex items-center gap-2">
-              <Award className="w-5 h-5 text-green-400" />
+              <Award className="w-5 h-5 text-green-400" aria-hidden="true" />
               <span className="font-semibold">Food Hygiene Rating: 5</span>
             </div>
           </div>
@@ -171,6 +270,7 @@ export default function Home() {
           <Button
             onClick={() => scrollToSection("offer")}
             className="bg-[#FF7A00] hover:bg-[#E66A00] text-white font-bold text-lg px-8 py-6 rounded-lg shadow-lg transform hover:scale-105 transition-transform animate-pulse"
+            aria-label="Claim 10% off your first order"
           >
             👉 Claim 10% Off Your First Order
           </Button>
@@ -182,6 +282,7 @@ export default function Home() {
               target="_blank"
               rel="noopener noreferrer"
               className="text-white hover:text-[#FF7A00] transition font-semibold underline"
+              aria-label="View location on Google Maps (opens in new window)"
             >
               📍 View Location on Google Maps
             </a>
@@ -189,21 +290,21 @@ export default function Home() {
         </div>
 
         {/* Scroll indicator */}
-        <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 z-20 animate-bounce">
+        <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 z-20 animate-bounce" aria-hidden="true">
           <ChevronDown className="w-8 h-8 text-white" />
         </div>
       </section>
 
-      {/* Social Proof Section */}
+      {/* ===== Social Proof Section ===== */}
       <section className="py-16 md:py-24 bg-white">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="headline-lg text-center mb-12">Why Locals Love Us</h2>
 
-          {/* Testimonials Grid */}
+          {/* Testimonials */}
           <div className="grid md:grid-cols-3 gap-8 mb-12">
-            {testimonials.map((testimonial, idx) => (
+            {TESTIMONIALS.map((testimonial, idx) => (
               <div
-                key={idx}
+                key={`testimonial-${idx}`}
                 className="bg-[#FFFAF0] p-6 rounded-lg border-l-4 border-[#FF7A00] shadow-md hover:shadow-lg transition"
               >
                 <p className="text-lg font-medium mb-4 italic">"{testimonial.text}"</p>
@@ -212,11 +313,11 @@ export default function Home() {
             ))}
           </div>
 
-          {/* Features */}
+          {/* Features grid */}
           <div className="grid md:grid-cols-2 gap-8">
             <div className="flex gap-4">
               <div className="w-12 h-12 bg-[#FF7A00] rounded-full flex items-center justify-center flex-shrink-0">
-                <Star className="w-6 h-6 text-white" />
+                <Star className="w-6 h-6 text-white" aria-hidden="true" />
               </div>
               <div>
                 <h3 className="font-bold text-lg mb-2">Authentic Northern Chinese Flavours</h3>
@@ -225,7 +326,7 @@ export default function Home() {
             </div>
             <div className="flex gap-4">
               <div className="w-12 h-12 bg-[#FF7A00] rounded-full flex items-center justify-center flex-shrink-0">
-                <Heart className="w-6 h-6 text-white" />
+                <Heart className="w-6 h-6 text-white" aria-hidden="true" />
               </div>
               <div>
                 <h3 className="font-bold text-lg mb-2">Fresh Hand-Pulled Noodles</h3>
@@ -234,7 +335,7 @@ export default function Home() {
             </div>
             <div className="flex gap-4">
               <div className="w-12 h-12 bg-[#FF7A00] rounded-full flex items-center justify-center flex-shrink-0">
-                <Zap className="w-6 h-6 text-white" />
+                <Zap className="w-6 h-6 text-white" aria-hidden="true" />
               </div>
               <div>
                 <h3 className="font-bold text-lg mb-2">Budget-Friendly Meals</h3>
@@ -243,7 +344,7 @@ export default function Home() {
             </div>
             <div className="flex gap-4">
               <div className="w-12 h-12 bg-[#FF7A00] rounded-full flex items-center justify-center flex-shrink-0">
-                <Award className="w-6 h-6 text-white" />
+                <Award className="w-6 h-6 text-white" aria-hidden="true" />
               </div>
               <div>
                 <h3 className="font-bold text-lg mb-2">Friendly, Welcoming Service</h3>
@@ -254,34 +355,60 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Menu Section */}
+      {/* ===== Menu Section with Filtering ===== */}
       <section id="menu" className="py-16 md:py-24 bg-[#FFFAF0]">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="headline-lg text-center mb-12">Customer Favourites</h2>
 
-          {/* Menu Grid */}
-          <div className="grid md:grid-cols-2 gap-8 mb-12">
-            {menuItems.map((item, idx) => (
-              <div
-                key={idx}
-                className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition transform hover:-translate-y-2"
+          {/* Filter buttons */}
+          <div className="flex flex-wrap justify-center gap-3 mb-12">
+            {FILTER_CATEGORIES.map((category) => (
+              <button
+                key={category.id}
+                onClick={() => toggleFilter(category.id)}
+                className={`px-6 py-2 rounded-full font-semibold transition-all duration-200 ${
+                  activeFilters.includes(category.id)
+                    ? "bg-[#FF7A00] text-white shadow-lg scale-105"
+                    : "bg-white text-[#0A0A0A] border-2 border-[#FF7A00] hover:bg-[#FFFAF0]"
+                }`}
+                aria-pressed={activeFilters.includes(category.id)}
+                aria-label={`Filter by ${category.label}`}
               >
-                <div className="h-48 overflow-hidden">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-bold text-lg">{item.name}</h3>
-                    <span className="text-[#FF7A00] font-bold text-xl">{item.price}</span>
-                  </div>
-                  <p className="text-gray-600">{item.description}</p>
-                </div>
-              </div>
+                {category.label}
+              </button>
             ))}
+          </div>
+
+          {/* Menu grid */}
+          <div className="grid md:grid-cols-2 gap-8 mb-12">
+            {filteredMenuItems.length > 0 ? (
+              filteredMenuItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition transform hover:-translate-y-2"
+                >
+                  <div className="h-48 overflow-hidden bg-gray-200">
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                  <div className="p-6">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-bold text-lg">{item.name}</h3>
+                      <span className="text-[#FF7A00] font-bold text-xl">{item.price}</span>
+                    </div>
+                    <p className="text-gray-600">{item.description}</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="col-span-full text-center py-12">
+                <p className="text-gray-600 text-lg">No dishes match your filters. Try clearing them.</p>
+              </div>
+            )}
           </div>
 
           {/* CTA */}
@@ -289,6 +416,7 @@ export default function Home() {
             <Button
               onClick={() => scrollToSection("offer")}
               className="bg-[#FF7A00] hover:bg-[#E66A00] text-white font-bold text-lg px-8 py-6 rounded-lg shadow-lg"
+              aria-label="Get 10% off your first order"
             >
               👉 Get 10% OFF Your First Order
             </Button>
@@ -296,7 +424,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Lead Capture Section */}
+      {/* ===== Lead Capture Section ===== */}
       <section id="offer" className="py-16 md:py-24 bg-[#0A0A0A] text-white">
         <div className="max-w-2xl mx-auto px-4">
           <h2 className="headline-lg text-center mb-4 text-white">Unlock 10% Off Your First Meal</h2>
@@ -310,27 +438,31 @@ export default function Home() {
                 type="text"
                 placeholder="Your Name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) => handleFormChange("name", e.target.value)}
                 className="bg-white text-black border-0 py-3 px-4 rounded-lg"
+                aria-label="Your name"
               />
               <Input
                 type="email"
                 placeholder="Your Email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) => handleFormChange("email", e.target.value)}
                 required
                 className="bg-white text-black border-0 py-3 px-4 rounded-lg"
+                aria-label="Your email"
               />
               <Input
                 type="tel"
                 placeholder="Your Phone (optional)"
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={(e) => handleFormChange("phone", e.target.value)}
                 className="bg-white text-black border-0 py-3 px-4 rounded-lg"
+                aria-label="Your phone number (optional)"
               />
               <Button
                 type="submit"
                 className="w-full bg-[#FF7A00] hover:bg-[#E66A00] text-white font-bold text-lg py-6 rounded-lg"
+                aria-label="Send me my 10% discount"
               >
                 👉 Send Me My 10% Discount
               </Button>
@@ -348,37 +480,42 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Location Section */}
+      {/* ===== Location Section ===== */}
       <section id="location" className="py-16 md:py-24 bg-white">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="headline-lg text-center mb-12">Find Us in Leicester City Centre</h2>
 
           <div className="grid md:grid-cols-2 gap-8 items-center mb-12">
-            {/* Location Info */}
+            {/* Location info */}
             <div className="space-y-6">
               <div className="flex gap-4">
-                <MapPin className="w-6 h-6 text-[#FF7A00] flex-shrink-0 mt-1" />
+                <MapPin className="w-6 h-6 text-[#FF7A00] flex-shrink-0 mt-1" aria-hidden="true" />
                 <div>
                   <p className="font-bold text-lg">47 Market Place, Leicester</p>
                   <p className="text-gray-600">Leicester LE1 5EL, United Kingdom</p>
                 </div>
               </div>
               <div className="flex gap-4">
-                <Phone className="w-6 h-6 text-[#FF7A00] flex-shrink-0 mt-1" />
+                <Phone className="w-6 h-6 text-[#FF7A00] flex-shrink-0 mt-1" aria-hidden="true" />
                 <div>
-                  <p className="font-bold text-lg">+447456504600</p>
+                  <p className="font-bold text-lg">
+                    <a href="tel:+447456504600" className="hover:text-[#FF7A00] transition">
+                      +447456504600
+                    </a>
+                  </p>
                   <p className="text-gray-600">Open most days 11:00–19:30</p>
                 </div>
               </div>
               <Button
                 onClick={() => scrollToSection("offer")}
                 className="bg-[#FF7A00] hover:bg-[#E66A00] text-white font-bold text-lg px-8 py-6 rounded-lg shadow-lg w-full"
+                aria-label="Get 10% off and visit today"
               >
                 👉 Get 10% Off & Visit Today
               </Button>
             </div>
 
-            {/* Google Maps Embed */}
+            {/* Google Maps */}
             <div className="h-80 rounded-lg overflow-hidden shadow-lg">
               <iframe
                 width="100%"
@@ -388,13 +525,14 @@ export default function Home() {
                 allowFullScreen
                 referrerPolicy="no-referrer-when-downgrade"
                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2413.5678901234567!2d-1.1381!3d52.6386!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4879c1c1c1c1c1c1%3A0x1c1c1c1c1c1c1c1c!2sGolden%20Orange%20Snack%2C%2047%20Market%20Pl%2C%20Leicester%20LE1%205EL!5e0!3m2!1sen!2suk!4v1234567890"
+                title="Golden Orange Snack location on Google Maps"
               ></iframe>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Why Choose Us Section */}
+      {/* ===== Why Choose Us Section ===== */}
       <section className="py-16 md:py-24 bg-[#FFFAF0]">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="headline-lg text-center mb-12">Not Your Typical Takeaway</h2>
@@ -402,21 +540,21 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-8 mb-12">
             <div className="bg-white p-8 rounded-lg shadow-md text-center">
               <div className="w-16 h-16 bg-[#FF7A00] rounded-full flex items-center justify-center mx-auto mb-4">
-                <Heart className="w-8 h-8 text-white" />
+                <Heart className="w-8 h-8 text-white" aria-hidden="true" />
               </div>
               <h3 className="font-bold text-xl mb-3">Authenticity</h3>
               <p className="text-gray-600">Real Chinese street food — not westernised versions</p>
             </div>
             <div className="bg-white p-8 rounded-lg shadow-md text-center">
               <div className="w-16 h-16 bg-[#FF7A00] rounded-full flex items-center justify-center mx-auto mb-4">
-                <Award className="w-8 h-8 text-white" />
+                <Award className="w-8 h-8 text-white" aria-hidden="true" />
               </div>
               <h3 className="font-bold text-xl mb-3">Quality</h3>
               <p className="text-gray-600">Fresh ingredients + 5-star hygiene rating</p>
             </div>
             <div className="bg-white p-8 rounded-lg shadow-md text-center">
               <div className="w-16 h-16 bg-[#FF7A00] rounded-full flex items-center justify-center mx-auto mb-4">
-                <Zap className="w-8 h-8 text-white" />
+                <Zap className="w-8 h-8 text-white" aria-hidden="true" />
               </div>
               <h3 className="font-bold text-xl mb-3">Value</h3>
               <p className="text-gray-600">Big flavours at low prices</p>
@@ -427,6 +565,7 @@ export default function Home() {
             <Button
               onClick={() => scrollToSection("offer")}
               className="bg-[#FF7A00] hover:bg-[#E66A00] text-white font-bold text-lg px-8 py-6 rounded-lg shadow-lg"
+              aria-label="Claim your 10% discount now"
             >
               👉 Claim Your 10% Discount Now
             </Button>
@@ -434,7 +573,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Urgency Section */}
+      {/* ===== Urgency Section ===== */}
       <section className="py-16 md:py-24 bg-[#FF7A00] text-white">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h2 className="headline-lg text-white mb-6">Limited-Time Offer</h2>
@@ -444,13 +583,14 @@ export default function Home() {
           <Button
             onClick={() => scrollToSection("offer")}
             className="bg-white hover:bg-gray-100 text-[#FF7A00] font-bold text-lg px-8 py-6 rounded-lg shadow-lg"
+            aria-label="Claim 10% off"
           >
             👉 Claim 10% Off
           </Button>
         </div>
       </section>
 
-      {/* Footer */}
+      {/* ===== Footer ===== */}
       <footer className="bg-[#0A0A0A] text-white py-12">
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid md:grid-cols-3 gap-8 mb-8">
@@ -461,7 +601,11 @@ export default function Home() {
             <div>
               <h3 className="font-bold text-lg mb-4">Location</h3>
               <p className="text-gray-400">47 Market Place, Leicester LE1 5EL</p>
-              <p className="text-gray-400">+447456504600</p>
+              <p className="text-gray-400">
+                <a href="tel:+447456504600" className="hover:text-[#FF7A00] transition">
+                  +447456504600
+                </a>
+              </p>
             </div>
             <div>
               <h3 className="font-bold text-lg mb-4">Quick Links</h3>
@@ -469,18 +613,21 @@ export default function Home() {
                 <button
                   onClick={() => scrollToSection("menu")}
                   className="text-gray-400 hover:text-[#FF7A00] transition block"
+                  aria-label="Navigate to menu"
                 >
                   Menu
                 </button>
                 <button
                   onClick={() => scrollToSection("location")}
                   className="text-gray-400 hover:text-[#FF7A00] transition block"
+                  aria-label="Navigate to location"
                 >
                   Location
                 </button>
                 <button
                   onClick={() => scrollToSection("offer")}
                   className="text-gray-400 hover:text-[#FF7A00] transition block"
+                  aria-label="Navigate to offer"
                 >
                   Offer
                 </button>
@@ -494,6 +641,7 @@ export default function Home() {
               target="_blank"
               rel="noopener noreferrer"
               className="text-[#FF7A00] hover:underline"
+              aria-label="View on Google Maps (opens in new window)"
             >
               View on Google Maps
             </a>
@@ -501,11 +649,27 @@ export default function Home() {
         </div>
       </footer>
 
-      {/* Exit Intent Popup */}
+      {/* ===== Exit Intent Popup ===== */}
       {showExitPopup && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="exit-popup-title"
+        >
           <div className="bg-white rounded-lg p-8 max-w-md w-full shadow-2xl animate-in fade-in zoom-in">
-            <h3 className="text-2xl font-bold mb-4">Wait! Grab 10% off before you go</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 id="exit-popup-title" className="text-2xl font-bold">
+                Wait! Grab 10% off before you go
+              </h3>
+              <button
+                onClick={() => setShowExitPopup(false)}
+                className="text-gray-400 hover:text-gray-600 transition"
+                aria-label="Close popup"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
             <p className="text-gray-600 mb-6">
               Join our community and get exclusive offers straight to your inbox.
             </p>
@@ -514,13 +678,15 @@ export default function Home() {
                 type="email"
                 placeholder="Your Email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) => handleFormChange("email", e.target.value)}
                 required
                 className="border-2 border-[#FF7A00]"
+                aria-label="Your email for discount"
               />
               <Button
                 type="submit"
                 className="w-full bg-[#FF7A00] hover:bg-[#E66A00] text-white font-bold"
+                aria-label="Send me my discount"
               >
                 Send Me My Discount
               </Button>
@@ -528,6 +694,7 @@ export default function Home() {
             <button
               onClick={() => setShowExitPopup(false)}
               className="w-full text-gray-600 hover:text-gray-800 transition"
+              aria-label="Dismiss popup"
             >
               No thanks
             </button>
